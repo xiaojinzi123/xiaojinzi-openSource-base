@@ -1,4 +1,4 @@
-package xiaojinzi.base.android.adapter;
+package xiaojinzi.base.android.adapter.file;
 
 import java.io.File;
 
