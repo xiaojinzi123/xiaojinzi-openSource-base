@@ -36,7 +36,9 @@ public abstract class CommonRecyclerViewAdapter<T> extends RecyclerView.Adapter<
      */
     @Override
     public CommonRecyclerViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        CommonRecyclerViewHolder vh = new CommonRecyclerViewHolder(View.inflate(context, getLayoutViewId(viewType), null));
+        View view = View.inflate(context, getLayoutViewId(viewType), null);
+        CommonRecyclerViewHolder vh = new CommonRecyclerViewHolder(view);
+        viewCreated(vh, viewType);
         return vh;
     }
 
@@ -53,6 +55,14 @@ public abstract class CommonRecyclerViewAdapter<T> extends RecyclerView.Adapter<
      * @param position 当前的下标
      */
     public abstract void convert(CommonRecyclerViewHolder h, T entity, int position);
+
+    /**
+     * 布局文件被转化成View的时候调用
+     * @param vh
+     * @param viewType
+     */
+    public void viewCreated(CommonRecyclerViewHolder vh, int viewType){
+    }
 
     /**
      * @param viewType 返回值就是根据这个值进行判断返回的
