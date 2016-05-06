@@ -57,7 +57,6 @@ public class ImageUtil {
 //        }
 //        return inSampleSize;
 //    }
-
     private static int calculateInSampleSize(BitmapFactory.Options options,
                                              int reqWidth, int reqHeight) {
         final int height = options.outHeight;
@@ -77,6 +76,9 @@ public class ImageUtil {
     // 如果是放大图片，filter决定是否平滑，如果是缩小图片，filter无影响
     private static Bitmap createScaleBitmap(Bitmap src, int dstWidth,
                                             int dstHeight) {
+        if (src == null) {
+            return null;
+        }
         Bitmap dst = Bitmap.createScaledBitmap(src, dstWidth, dstHeight, false);
         if (src != dst) { // 如果没有缩放，那么不回收
             src.recycle(); // 释放Bitmap的native像素数组
@@ -93,7 +95,7 @@ public class ImageUtil {
      * @return
      */
     public static BitmapFactory.Options getBitMapOptions(String localImagePath) {
-        BitmapFactory.Options options = new BitmapFactory.Options();
+        final BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
         //计算出了图片的大小,没有真正的加载
         BitmapFactory.decodeFile(localImagePath, options);
