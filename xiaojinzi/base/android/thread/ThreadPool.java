@@ -1,4 +1,4 @@
-package xiaojinzi.base.java.util;
+package xiaojinzi.base.android.thread;
 
 import android.os.Handler;
 import android.os.Message;
@@ -37,7 +37,7 @@ public class ThreadPool implements Runnable {
         public void handleMessage(Message msg) {
             int what = msg.what;
             switch (what) {
-                case stopped_flag: //如果是停止了
+                case stopped_flag:
                     currentThreadNum--;
                     startThread();
                     break;

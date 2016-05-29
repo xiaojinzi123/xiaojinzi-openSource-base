@@ -1,4 +1,4 @@
-package xiaojinzi.base.java.util;
+package xiaojinzi.base.java.collection;
 
 import java.util.ArrayList;
 import java.util.Iterator;

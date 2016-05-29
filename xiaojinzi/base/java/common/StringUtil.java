@@ -1,10 +1,9 @@
-package xiaojinzi.base.java.util;
+package xiaojinzi.base.java.common;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import android.annotation.SuppressLint;
 
 /**
  * 有关字符串的工具类
@@ -12,7 +11,6 @@ import android.annotation.SuppressLint;
  * @author xiaojinzi
  *
  */
-@SuppressLint("DefaultLocale")
 public class StringUtil {
 
 	/**
@@ -22,8 +20,6 @@ public class StringUtil {
 	 *            要转化的流对象
 	 * @param charEncoding
 	 *            编码方式
-	 * @param pd
-	 *            进度条对话框
 	 * @return
 	 * @throws IOException
 	 */

@@ -1,4 +1,4 @@
-package xiaojinzi.base.java.util;
+package xiaojinzi.base.android.common;
 
 import android.graphics.Point;
 

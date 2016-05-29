@@ -1,4 +1,4 @@
-package xiaojinzi.base.java.util;
+package xiaojinzi.base.java.io;
 
 /**
  * 有关输出流的工具类

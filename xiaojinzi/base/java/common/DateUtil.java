@@ -1,4 +1,4 @@
-package xiaojinzi.base.java.util;
+package xiaojinzi.base.java.common;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;

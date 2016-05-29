@@ -1,4 +1,4 @@
-package xiaojinzi.base.java.util;
+package xiaojinzi.base.java.io;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
