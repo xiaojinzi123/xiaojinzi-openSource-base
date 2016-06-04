@@ -4,6 +4,7 @@ package xiaojinzi.base.java.net;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
@@ -17,7 +18,7 @@ import xiaojinzi.base.java.io.FileUtil;
 
 
 /**
- * 封装了网络请求,Get请求和Post请求都可以
+ * 封装了网络请求,Get请求和Post请求都已经实现
  *
  * @author xiaojinzi
  */
@@ -28,6 +29,11 @@ public class Http {
      * 默认超时的时间,5秒
      */
     public static int TIMEOUTMILLIS = 5000;
+
+    /**
+     * 默认的编码方式
+     */
+    public static final String DEFAULTCHARENCODING = "UTF-8";
 
     /**
      * post请求提交数据的时候的内容的前缀
@@ -50,25 +56,19 @@ public class Http {
     public static final String NORMAL_FROM_DATA = "application/x-www-form-urlencoded";
 
     /**
-     * 报文中的内容开始的标识
+     * 用于存储每一个线程请求成功以后返回的内容长度
      */
-    public static final String contentPrefix = "--";
-
+    private static Map<Long, Integer> map_contentLength = new HashMap<Long, Integer>();
 
     /**
-     * android提供的类似于Map的集合对象
-     */
-    private static Map<Long, Integer> array = new HashMap<Long, Integer>();
-
-    /**
-     * 在执行方法{@link Http#sendRequest(NetTask)}
+     * 在执行方法{@link Http#sendRequest(HttpRequest)}
      * 中,如果请求正常,那么返回内容的长度将会通过这个方法存放到集合中
      *
      * @param threadId      线程的id
      * @param contentLength 线程成功执行的请求返回数据的长度
      */
     private synchronized static void putContentLength(Long threadId, Integer contentLength) {
-        array.put(threadId, contentLength);
+        map_contentLength.put(threadId, contentLength);
     }
 
     /**
@@ -79,24 +79,24 @@ public class Http {
      * @return 线程成功执行的请求返回数据的长度
      */
     public synchronized static Integer getContentLength(Long threadId) {
-        Integer result = array.get(threadId);
-        array.remove(threadId);
+        Integer result = map_contentLength.get(threadId);
+        map_contentLength.remove(threadId);
         return result;
     }
 
     /**
      * 发送请求,同步的,并非异步
      *
-     * @param netTask
+     * @param httpRequest
      * @return
      */
-    public static InputStream sendRequest(NetTask netTask) throws IOException {
+    public static InputStream sendRequest(HttpRequest httpRequest) throws IOException {
 
         //网络任务开始之前的检查
-        checkBeforRequestBegin(netTask);
+        checkBeforRequestBegin(httpRequest);
 
         // 创建Url对象
-        URL url = new URL(netTask.getRequesutUrl());
+        URL url = new URL(httpRequest.getRequesutUrl());
 
         // 获取连接对象
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -105,14 +105,16 @@ public class Http {
         conn.setConnectTimeout(TIMEOUTMILLIS);
 
         //添加一些基本的头信息
-        addBaseRequestProperty(conn);
+        addBaseRequestProperty(conn, httpRequest);
 
-        if (netTask.getRequestMethod() == NetTask.POST) { //如果要post请求
+        if (httpRequest.getRequestMethod() == HttpRequest.POST) { //如果要post请求
 
+            //初始化一些参数
             conn.setRequestMethod("POST");
             conn.setDoInput(true);
             conn.setDoOutput(true);
-            //拿到一个随机生成的标识
+
+            //拿到一个随机生成的标识,用于post请求体中的分割参数
             String boundary = java.util.UUID.randomUUID().toString();
             //设置文件类型
             conn.setRequestProperty("Content-Type", MULTIPART_FROM_DATA + ";boundary=" + boundary);
@@ -125,10 +127,11 @@ public class Http {
             //创建一个StringBuffer避免频繁的字符串的操作
             StringBuffer sb = new StringBuffer();
 
+            //先添加两个回车换行
             sb.append(LINEEND).append(LINEEND);
 
             //拿到普通字段的迭代器
-            Iterator<Map.Entry<String, String>> it = netTask.getTextParameter().entrySet().iterator();
+            Iterator<Map.Entry<String, String>> it = httpRequest.getTextParameter().entrySet().iterator();
             while (it.hasNext()) {
                 Map.Entry<String, String> entry = it.next();
                 //拿到key和value
@@ -148,7 +151,7 @@ public class Http {
             //输出普通的字段的数据
             outputStream.write(textParameterBytes);
 
-            List<FileInfo> filesParameter = netTask.getFilesParameter();
+            List<FileInfo> filesParameter = httpRequest.getFilesParameter();
 
             for (int i = 0; i < filesParameter.size(); i++) {
                 FileInfo fileInfo = filesParameter.get(i);
@@ -165,7 +168,7 @@ public class Http {
 
                 outputStream.write(getTextParameterByte(sb.toString()));
 
-                //文件真正的数据输出
+                //文件真正的数据输出,读取文件信息到输出流中
                 FileUtil.readFileToOutputStream(fileInfo.file, outputStream);
 
                 outputStream.write(getTextParameterByte(LINEEND));
@@ -175,28 +178,31 @@ public class Http {
 
             sb.delete(0, sb.length());
 
-            //添加结尾的标识
+            //添加结尾的标识,post的固定格式,不能省略
             sb.append(CONTENTPREFIX).append(boundary).append(CONTENTPREFIX).append(LINEEND);
             outputStream.write(getTextParameterByte(sb.toString()));
 
+        } else {
+            //设置文件类型
+            conn.setRequestProperty("Content-Type", NORMAL_FROM_DATA);
         }
 
-        return getInputStream(netTask, conn);
+        return getInputStream(httpRequest, conn);
 
     }
 
     /**
      * 请求开始的之前对请求做一个检查
      *
-     * @param netTask
+     * @param httpRequest
      */
-    private static void checkBeforRequestBegin(NetTask netTask) {
+    private static void checkBeforRequestBegin(HttpRequest httpRequest) {
         //检查网址
-        if (netTask.getRequesutUrl() == null || netTask.getRequesutUrl().equals("")) {
+        if (httpRequest.getRequesutUrl() == null || httpRequest.getRequesutUrl().equals("")) {
             throw new IllegalArgumentException("the request url can not be null or empty");
         }
         //检查请求的方法
-        if (netTask.getRequestMethod() != NetTask.GET && netTask.getRequestMethod() != NetTask.POST) {
+        if (httpRequest.getRequestMethod() != HttpRequest.GET && httpRequest.getRequestMethod() != HttpRequest.POST) {
             throw new IllegalArgumentException("unknown request method");
         }
     }
@@ -206,8 +212,8 @@ public class Http {
      *
      * @param conn
      */
-    private static void addBaseRequestProperty(HttpURLConnection conn) {
-        // 以下是设置一些头信息
+    private static void addBaseRequestProperty(HttpURLConnection conn, HttpRequest httpRequest) {
+        // 以下是设置一些基本的头信息
         conn.addRequestProperty("Accept", "Accept text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         conn.addRequestProperty("Accept-Charset", "GB2312,GBK,utf-8;q=0.7,*;q=0.7");
         conn.addRequestProperty("User-Agent",
@@ -215,15 +221,25 @@ public class Http {
         // conn.addRequestProperty("Accept-Encoding", "gzip, deflate");
         conn.addRequestProperty("Accept-Language", "zh-cn,zh;q=0.5");
         conn.addRequestProperty("Connection", "keep-alive");
+
+        //添加自定义的一些头信息
+        Map<String, String> requestHeaders = httpRequest.getRequestHeaders();
+        Iterator<Map.Entry<String, String>> iterator = requestHeaders.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, String> entry = iterator.next();
+            String key = entry.getKey();
+            String value = entry.getValue();
+            conn.addRequestProperty(key, value);
+        }
     }
 
     /**
-     * @param netTask
+     * @param httpRequest
      * @param conn
      * @return
      * @throws IOException
      */
-    public static InputStream getInputStream(NetTask netTask, HttpURLConnection conn) throws IOException {
+    public static InputStream getInputStream(HttpRequest httpRequest, HttpURLConnection conn) throws IOException {
         // 获取相应码
         int responseCode = conn.getResponseCode();
 
@@ -249,8 +265,8 @@ public class Http {
      * @param content
      * @return
      */
-    private static byte[] getTextParameterByte(String content) {
-        return content.getBytes();
+    private static byte[] getTextParameterByte(String content) throws UnsupportedEncodingException {
+        return content.getBytes(DEFAULTCHARENCODING);
     }
 
 

@@ -18,8 +18,19 @@ public class FileInfo {
      */
     public String key;
 
+    /**
+     * 类型
+     */
+    public String contentType;
+
     public FileInfo(String key, File file) {
         this.file = file;
         this.key = key;
+    }
+
+    public FileInfo(String key, File file, String contentType) {
+        this.file = file;
+        this.key = key;
+        this.contentType = contentType;
     }
 }

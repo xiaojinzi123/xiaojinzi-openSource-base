@@ -1,8 +1,6 @@
 package xiaojinzi.base.java.net;
 
 
-import xiaojinzi.base.java.net.NetTask;
-
 /**
  * 任务执行完毕后结果的处理
  *
@@ -14,7 +12,7 @@ public class ResultInfo<Parameter> {
     /**
      * 网络请求对象
      */
-    public NetTask netTask;
+    public HttpRequest httpRequest;
 
     /**
      * 请求的结果
