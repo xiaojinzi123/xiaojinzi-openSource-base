@@ -58,9 +58,14 @@ public class HttpRequest<Parameter> {
     private String requesutUrl;
 
     /**
-     * 请求的数据类型,默认是字节流
+     * 记录一下请求的数据类型,做缓存功能的时候有用
      */
-    private int responseDataStyle = ResponseHandler.INPUTSTREAMDATA;
+    private int preResponseDataStyle = ResponseHandler.STRINGDATA;
+
+    /**
+     * 请求的数据类型,默认是字符串,处理返回的结果的时候就是根据这个来判断需要调用哪一个方法来处理数据,
+     */
+    private int responseDataStyle = ResponseHandler.STRINGDATA;
 
     /**
      * 请求完成后回调处理数据的接口
@@ -123,6 +128,7 @@ public class HttpRequest<Parameter> {
     }
 
     public HttpRequest<Parameter> setResponseDataStyle(int responseDataStyle) {
+        this.preResponseDataStyle = this.responseDataStyle;
         this.responseDataStyle = responseDataStyle;
         return this;
     }
@@ -151,6 +157,10 @@ public class HttpRequest<Parameter> {
         return requestMethod;
     }
 
+
+    public int getPreResponseDataStyle() {
+        return preResponseDataStyle;
+    }
 
     public int getResponseDataStyle() {
         return responseDataStyle;
